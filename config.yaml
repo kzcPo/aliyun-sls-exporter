@@ -1,0 +1,28 @@
+credentials:
+  # You can obtain monitoring data of multiple tenants by configuring multiple Tenant information.
+  cn-aliyun:
+    accessKey: xxx
+    accessKeySecret: xxxx
+    region: cn-zhangjiakou
+
+logsMetric:
+  taqu:
+    - project: taqu
+      logstore: service_logdb
+      name: system_requests_count
+      desc: all level, group by system uri
+      query: env:online | select "system", "uri", count(1) as pv from log group by "system", "uri"
+      dimensions:
+        - uri
+        - system
+      measure: pv
+    - project: taqu
+      logstore: service_logdb
+      name: system_requests_error_count
+      desc: level error, group by system uri
+      query: env:online and level:error | select "level", "system", "uri", count(1) as pv from log group by "level", "system", "uri"
+      dimensions:
+        - level
+        - uri
+        - system
+      measure: pv
