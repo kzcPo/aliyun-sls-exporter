@@ -82,7 +82,7 @@ type serveOption struct {
 
 func (o *serveOption) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.configFile, "config", "c", "config.yaml", "Path of config file")
-	cmd.Flags().StringVar(&o.listenAddress, "web.listen-address", ":9527", "Address on which to expose metrics and web interface.")
+	cmd.Flags().StringVar(&o.listenAddress, "web.listen-address", ":9528", "Address on which to expose metrics and web interface.")
 }
 
 func (o *serveOption) Complete() error {

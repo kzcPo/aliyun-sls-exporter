@@ -8,12 +8,11 @@ credentials:
 logsMetric:
   taqu:
     - project: taqu
-      logstore: service_logdb
-      name: system_requests_count
+      logstore: nginx_logdb
+      name: system_nginx_requests_count
       desc: all level, group by system uri
-      query: env:online | select "system", "uri", count(1) as pv from log group by "system", "uri"
+      query: env:online  | select "system", pv from( select count(1) as pv , "system" from log group by "system" order by pv desc) order by pv desc
       dimensions:
-        - uri
         - system
       measure: pv
     - project: taqu
