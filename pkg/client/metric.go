@@ -102,24 +102,35 @@ func (c *MetricClient) SetTransport(rate int) {
 // retrive get datapoints for metric
 func (c *MetricClient) retrive(project, logstore, query string) ([]Datapoint, error) {
 	timeAgo := c.getOneMinuteTime()
-	getLogsRequest := &sls20201230.GetLogsRequest{
-		Type:  tea.String("log"),
-		From:  tea.Int64(timeAgo[0]),
-		To:    tea.Int64(timeAgo[1]),
-		Query: tea.String(query),
-	}
-	runtime := &util.RuntimeOptions{}
-	headers := make(map[string]*string)
-	resp, err := c.sls.GetLogsWithOptions(tea.String(project), tea.String(logstore), getLogsRequest, headers, runtime)
-	if err != nil {
-		return nil, err
-	}
-
-	b, _ := json.Marshal(&resp.Body)
 	var datapoints []Datapoint
-	if err = json.Unmarshal(b, &datapoints); err != nil {
-		// some execpected error
-		return nil, err
+	pageNumber := 1
+	for {
+
+		getLogsRequest := &sls20201230.GetLogsRequest{
+			Type:  tea.String("log"),
+			From:  tea.Int64(timeAgo[0]),
+			To:    tea.Int64(timeAgo[1]),
+			Query: tea.String(query + getPageLimit(pageNumber)),
+		}
+		runtime := &util.RuntimeOptions{}
+		headers := make(map[string]*string)
+		resp, err := c.sls.GetLogsWithOptions(tea.String(project), tea.String(logstore), getLogsRequest, headers, runtime)
+		if err != nil {
+			return nil, err
+		}
+
+		b, _ := json.Marshal(&resp.Body)
+		var dp []Datapoint
+		if err = json.Unmarshal(b, &dp); err != nil {
+			// some execpected error
+			return nil, err
+		}
+		datapoints = append(datapoints, dp...)
+		if len(dp) < 100 {
+			break
+		}
+		pageNumber++
+
 	}
 
 	return datapoints, nil
@@ -160,7 +171,16 @@ func (c *MetricClient) getOneMinuteTime() []int64 {
 	t2 := time.Now()
 	u2 := t2.Truncate(time.Minute * 1).Unix()
 	d = append(d, u2)
-	level.Info(c.logger).Log("A-minute-ago:", u1, "A-minute-later:", u2)
+	level.Info(c.logger).Log("from:", u1, "to:", u2)
 
 	return d
+}
+
+// getPageLimit Get Request Page Limit Value
+func getPageLimit(pageNumber int) string {
+	start, end := 0, 100
+	step := (pageNumber - 1) * 100
+	start = step + start
+	end = step + end
+	return " limit " + tea.ToString(start) + "," + tea.ToString(end)
 }
